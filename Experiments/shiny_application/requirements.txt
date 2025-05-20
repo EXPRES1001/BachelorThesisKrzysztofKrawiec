@@ -1,0 +1,6 @@
+shiny
+skfolio
+yfinance
+pandas
+numpy
+plotly
