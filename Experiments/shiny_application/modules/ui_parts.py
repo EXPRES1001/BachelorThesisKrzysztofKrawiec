@@ -1,5 +1,6 @@
 from shiny import ui
 from Experiments.shiny_application.modules.data_gathering import PERIODS
+from shinywidgets import output_widget  
 
 
 portfolio_data_source_panel = ui.card(
@@ -61,8 +62,40 @@ customization_panel = ui.layout_columns(
     col_widths=(3,3,6)
 )
 
+sidebar_content = ui.card(
+    ui.card_header(
+        ui.tags.h5("📈 Customize Data for Portfolio Analysis", class_="card-title"),
+        class_="bg-primary text-white"  # Matching header style
+    ),
+    ui.input_select(
+        'benchmark_portfolio',
+        'Select your benchmark portfolio',
+        ['EqualWeighted', 'Random', 'InverseVolatility']
+    ),
+    ui.input_radio_buttons(
+        'plot_type',
+        'Which plot do you want to see?',
+        ['CumulativeReturns', 'Returns', 'ReturnsDistribution', 'RollingMeasure', 'Composition'],
+        selected= 'CumulativeReturns',
+        inline= False
+    )
+)
 
-analysis_panel = ui.layout_columns()
+
+analysis_content = None
+
+analysis_panel = ui.page_sidebar(
+    ui.sidebar(sidebar_content, bg="#f8f8f8", open="closed", width="300px"),  
+    ui.layout_columns(
+        ui.card(
+            ui.card_header(
+                ui.tags.h5("📈 Visualisations", class_="card-title"),
+                class_="bg-primary text-white"  # Matching header style
+            ),
+            output_widget("render_portfolio_plots")
+        )
+    ),
+)
 
 
 optimization_panel = ui.layout_columns()

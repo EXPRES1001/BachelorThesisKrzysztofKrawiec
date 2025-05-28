@@ -5,6 +5,7 @@ from Experiments.shiny_application.modules.callbacks2 import register_callbacks2
 
 def server(input, output, session):
     register_callbacks1(input, output, session)
+    register_callbacks2(input, output, session)
 
 app = App(app_ui, server)
 

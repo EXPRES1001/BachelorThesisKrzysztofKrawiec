@@ -1,6 +1,7 @@
 from shiny import render, ui, req
 from skfolio.preprocessing import prices_to_returns
 from Experiments.shiny_application.modules.data_gathering import gather_data, PERIODS, PORTFOLIOS_TO_PRICES
+from pathlib import Path
 
 def register_callbacks1(input, output, session):
     # -- dynamic_input_data_source --------------------------------------------------
@@ -174,7 +175,7 @@ def register_callbacks1(input, output, session):
     @render.ui
     def dynamic_input_date_or_period():
         if input.date_or_period() == "period":
-            return ui.input_select("period_selection", "Period", PERIODS)
+            return ui.input_select("period_selection", "Period", PERIODS, selected= '3mo')
         return ui.input_date_range("date_range", "Date range",
                                    start="2020-01-01")
 
@@ -254,17 +255,44 @@ def register_callbacks1(input, output, session):
 
         except ValueError as e:
             return ui.markdown(f"**Błąd ⚠️**: {e}")
-
-        return df    
+        
+        data_dir = Path("Experiments/shiny_application/modules/data")
+        data_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = data_dir / "yf_downloaded_data.csv"
+        df.to_csv(csv_path, index=True)
+        
+        match input.price_or_return():
+            case "Prices":
+                df = df.reset_index()
+                df['date'] = df['date'].dt.date
+                df = df.sort_values(by='date', ascending= False)
+                return df
+            case "Returns":
+                df = prices_to_returns(df).round(5)
+                df = df.reset_index()
+                df['date'] = df['date'].dt.date
+                df = df.sort_values(by='date', ascending= False)
+                return df
+    
 
     # -- prepared_df_portfolio_prices -------------------------------------------
     @output
     @render.data_frame
     def prepared_df_portfolio_prices():
         pft = PORTFOLIOS_TO_PRICES[input.data_frame()]
+        data_dir = Path("Experiments/shiny_application/modules/data")
+        data_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = data_dir / "prepared_data.csv"
+        pft.to_csv(csv_path, index=True)
         match input.price_or_return():
             case "Prices":
+                pft = pft.reset_index()
+                pft['Date'] = pft['Date'].dt.date
+                pft = pft.sort_values(by='Date', ascending= False)                
                 return pft
             case "Returns":
-                return prices_to_returns(pft).round(5)
-        return pft
+                pft = prices_to_returns(pft).round(5)
+                pft = pft.reset_index()
+                pft['Date'] = pft['Date'].dt.date
+                pft = pft.sort_values(by='Date', ascending= False)
+                return pft
