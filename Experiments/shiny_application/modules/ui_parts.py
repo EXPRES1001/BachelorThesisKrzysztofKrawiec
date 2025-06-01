@@ -97,8 +97,81 @@ analysis_panel = ui.page_sidebar(
     ),
 )
 
+backtesting_setup = ui.card(
+    ui.card_header(
+            ui.tags.h5("⚙️ Optimization and Backtesting Setup", class_="card-title"),
+            class_="bg-primary text-white"  # Matching header style
+        ),
+    ui.input_select(
+        'backtesting_benchmark_portfolio',
+        'Select benchmark portfolio for backtesting',
+        ['EqualWeighted', 'Random', 'InverseVolatility'],
+        selected= 'EqualWeighted'
+    ),
+    ui.input_select(
+        'optimization_method',
+        'Select portfolio optimization method for backtesting',
+        {
+            'MeanVariance': 'Mean-Variance Optimization', 'BlackLitterman': 'Black-Litterman Optimization',
+            'RP': 'Risk-Parity Optimization', 'HRP': 'Hierarchical Risk Parity Optimization'
+        },
+        selected= 'MeanVariance'
+    ),
+    ui.input_select(
+        'rebalancing_time_period',
+        'Choose your rebalancing period (on the first day)',
+        {
+            'Annually': 'Rebalance Annually', 'Semi-Annually': 'Rebalance Semi-Annually',
+            'Quarterly': 'Rebalance Quarterly', 'Monthly': 'Rebalance Monthly', 'Weekly': 'Rebalance Weekly'
+        },
+        selected= 'Monthly'
+    ),
+    ui.input_select(
+        'train_time_period',
+        'Choose your train time period',
+        {
+            'Year': 'One Year',
+            '11months': '11 Months',
+            '10months': '10 Months',
+            '9months': '9 Months',
+            '8months': '8 Months',
+            '7months': '7 Months',
+            '6months': '6 Months',
+            '5months': '5 Months',
+            '4months': '4 Months',
+            '3months': '3 Months',
+            '2months': '2 Months',
+            '1month': '1 Month',
+            '3weeks': '3 Weeks',
+            '2weeks': '2 Weeks',
+            '1week': '1 Week'
+        },
+        selected=  '4months'
+    )
+)
 
-optimization_panel = ui.layout_columns()
+data_summary = ui.card()
+backtesting_plots = ui.card(
+    output_widget("render_benchmark_cumulative_returns_plot")
+)
+
+backtesting_summary = ui.card(
+    ui.card_header(
+            ui.tags.h5("🔍 Optimization and Backtesting Summary", class_="card-title"),
+            class_="bg-primary text-white"  # Matching header style
+        ),
+    ui.layout_columns(
+        data_summary,
+        backtesting_plots,
+        col_widths=(4,8)
+    )
+)
+
+optimization_panel = ui.layout_columns(
+    backtesting_setup,
+    backtesting_summary,
+    col_widths=(4, 8)
+)
 
 
 title_css = ui.tags.style("""
@@ -116,7 +189,7 @@ app_ui = ui.page_fluid(
     ui.navset_pill(
         ui.nav_panel("Portfolio Customization", customization_panel),
         ui.nav_panel("Portfolio Exploratory Analysis", analysis_panel),
-        ui.nav_panel("Portfolio Optimization", optimization_panel),
+        ui.nav_panel("Portfolio Optimization and Backtesting", optimization_panel),
         ui.nav_spacer(),
         ui.nav_control(ui.input_dark_mode()),
         id="tab",

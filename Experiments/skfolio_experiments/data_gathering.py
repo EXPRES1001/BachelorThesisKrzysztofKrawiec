@@ -190,17 +190,17 @@ def gather_data(tickers: List[str],
 
 # ------------------------------ TESTS ----------------------------------------#
 
-WIG20 = [
-        "ALR.WA", "ALE.WA", "BDX.WA", "CCC.WA", "CDR.WA",
-        "CPS.WA", "DNP.WA", "KTY.WA", "JSW.WA", "KGH.WA",
-        "KRU.WA", "LPP.WA", "MBK.WA", "OPL.WA", "PEO.WA",
-        "PGE.WA", "PKN.WA", "PKO.WA", "PZU.WA", "PCO.WA"
-    ]
+# WIG20 = [
+#         "ALR.WA", "ALE.WA", "BDX.WA", "CCC.WA", "CDR.WA",
+#         "CPS.WA", "DNP.WA", "KTY.WA", "JSW.WA", "KGH.WA",
+#         "KRU.WA", "LPP.WA", "MBK.WA", "OPL.WA", "PEO.WA",
+#         "PGE.WA", "PKN.WA", "PKO.WA", "PZU.WA", "PCO.WA"
+#     ]
 
 
-start = datetime.datetime(2022,11,15)
-end = datetime.datetime(2025,4,4)
-period = '3y'
+# start = datetime.datetime(2022,11,15)
+# end = datetime.datetime(2025,4,4)
+# period = '3y'
 
-wig20 = gather_data(WIG20, period='3y')
-print(wig20.head(10))
+# wig20 = gather_data(WIG20, period='3y')
+# print(wig20.head(10))
