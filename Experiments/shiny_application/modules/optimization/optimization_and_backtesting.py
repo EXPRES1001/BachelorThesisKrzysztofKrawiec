@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from skfolio.model_selection import WalkForward, cross_val_predict
 from skfolio import RiskMeasure
@@ -73,6 +74,10 @@ def backtest_portfolio(portfolio_historical_returns, method, benchmark, rebalanc
     strategy = cross_val_predict(model, portfolio_historical_returns, cv=WalkForward(test_size= test_size, train_size= train_size))
     benchmark_portfolio = cross_val_predict(benchmark_estimator, portfolio_historical_returns, cv=WalkForward(test_size= test_size, train_size= train_size))
 
+    return (strategy, benchmark_portfolio)
+
+def plot_cumulative_returns(portfolio_historical_returns, method, strategy, benchmark, benchmark_portfolio):
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=portfolio_historical_returns.index.strftime("%Y-%m-%d").tolist(),
@@ -100,3 +105,65 @@ def backtest_portfolio(portfolio_historical_returns, method, benchmark, rebalanc
     )
 
     return fig
+
+def compare_multiperiod_portfolios(p1, p2, initial_amount, names=["Portfolio 1", "Portfolio 2"]):
+    metrics = [
+        "Mean Return (Ann.)",
+        "Volatility (Ann.)",
+        "Sharpe Ratio",
+        "Sortino Ratio",
+        "Skewness",
+        "Kurtosis",
+        "Cumulative Return",
+        "Final Value"
+    ]
+
+    descriptions = [
+        "Annualized average return (%)",
+        "Annualized volatility (%)",
+        "Risk-adjusted return (Sharpe)",
+        "Downside risk-adjusted return (Sortino)",
+        "Asymmetry of return distribution",
+        "Fat tails in return distribution",
+        "Total return over full period (%)",
+        "Final portfolio value in currency"
+    ]
+
+    data = {
+        "Mean Return (Ann.)": [
+            p1.annualized_mean,
+            p2.annualized_mean
+        ],
+        "Volatility (Ann.)": [
+            p1.annualized_variance,
+            p2.annualized_variance
+        ],
+        "Sharpe Ratio": [
+            p1.sharpe_ratio,
+            p2.sharpe_ratio
+        ],
+        "Sortino Ratio": [
+            p1.sortino_ratio,
+            p2.sortino_ratio
+        ],
+        "Skewness": [
+            p1.skew,
+            p2.skew
+        ],
+        "Kurtosis": [
+            p1.kurtosis,
+            p2.kurtosis
+        ],
+        "Cumulative Return": [
+            p1.cumulative_returns[-1],
+            p2.cumulative_returns[-1]
+        ],
+        "Final Value": [
+            (p1.cumulative_returns[-1]) * initial_amount,
+            (p2.cumulative_returns[-1]) * initial_amount
+        ]
+    }
+
+    df = pd.DataFrame(data, index=names).T
+    df.insert(0, "Metrics", metrics)
+    return df.round(4)

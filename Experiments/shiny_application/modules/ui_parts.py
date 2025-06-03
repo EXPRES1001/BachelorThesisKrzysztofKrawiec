@@ -147,10 +147,18 @@ backtesting_setup = ui.card(
             '1week': '1 Week'
         },
         selected=  '4months'
+    ),
+    ui.input_numeric(
+        'initial_amount',
+        'Insert your initial amount of capital',
+        10000,
+        min = 1
     )
 )
 
-data_summary = ui.card()
+data_summary = ui.card(
+    ui.output_data_frame("render_benchmark_statistics")
+)
 backtesting_plots = ui.card(
     output_widget("render_benchmark_cumulative_returns_plot")
 )
@@ -170,7 +178,7 @@ backtesting_summary = ui.card(
 optimization_panel = ui.layout_columns(
     backtesting_setup,
     backtesting_summary,
-    col_widths=(4, 8)
+    col_widths=(3, 9)
 )
 
 
