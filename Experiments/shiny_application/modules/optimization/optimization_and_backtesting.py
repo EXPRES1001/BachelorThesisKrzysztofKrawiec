@@ -6,6 +6,10 @@ from skfolio import RiskMeasure
 from skfolio.optimization import EqualWeighted, InverseVolatility, Random
 from skfolio.optimization import MeanRisk, ObjectiveFunction, HierarchicalRiskParity, RiskBudgeting
 from skfolio.prior import BlackLitterman
+from skfolio.moments import DenoiseCovariance, EmpiricalMu
+from skfolio.prior import EmpiricalPrior
+from skfolio.distance import KendallDistance
+
 import plotly.graph_objects as go
 
 
@@ -18,6 +22,8 @@ REBALANCING_PERIODS_TO_DAYS = {
 }
 
 TRAIN_TIME_PERIODS_TO_DAYS = {
+    '3Years': 756,
+    '2Years': 504,
     'Year': 252,
     '11months': 231,
     '10months': 210,
@@ -42,7 +48,25 @@ BENCHMARK_PORTFOLIOS_TO_ESTIMATORS = {
 }
 
 
-def backtest_portfolio(portfolio_historical_returns, method, benchmark, rebalancing_period, train_time_period):
+
+def create_performance_metrics_table(portfolio, initial_value, name="Portfolio 1"):
+    metrics = {
+        "Sharpe Ratio": round(portfolio.sharpe_ratio, 4),
+        "Annualized Sharpe": round(portfolio.annualized_sharpe_ratio, 4),
+        "Variance": round(portfolio.variance, 6),
+        "Annualized Variance": round(portfolio.annualized_variance, 6),
+        "Standard Deviation": round(portfolio.standard_deviation, 4),
+        "Annualized Std Dev": round(portfolio.annualized_standard_deviation, 4),
+        "Mean Return": round(portfolio.mean, 4),
+        "Annualized Mean": round(portfolio.annualized_mean, 4),
+        "Cumulative Return": round(portfolio.cumulative_returns[-1], 4),
+        "Final Value": round((1 + portfolio.cumulative_returns[-1]) * initial_value, 4)
+    }
+
+    df = pd.DataFrame(list(metrics.items()), columns=["Metrics", name])
+    return df
+
+def backtest_portfolio(portfolio_historical_returns, method, benchmark, rebalancing_period, train_time_period, views=None):
     
     test_size = REBALANCING_PERIODS_TO_DAYS[rebalancing_period]
     train_size = TRAIN_TIME_PERIODS_TO_DAYS[train_time_period]
@@ -50,34 +74,57 @@ def backtest_portfolio(portfolio_historical_returns, method, benchmark, rebalanc
     
     if method == 'MeanVariance':
         model =  MeanRisk(
-            objective_function=ObjectiveFunction.MAXIMIZE_RATIO,
-            risk_measure=RiskMeasure.VARIANCE,
+            objective_function = ObjectiveFunction.MINIMIZE_RISK,
+            risk_measure = RiskMeasure.VARIANCE,
+            risk_free_rate= 0.05,
+            prior_estimator= EmpiricalPrior(
+                mu_estimator= EmpiricalMu(), 
+                covariance_estimator = DenoiseCovariance()
+                ),
+            portfolio_params=dict(name="Minimum Variance Portfolio")
         )
-    elif method == 'BlackLitterman':
+    elif method == 'BlackLitterman' and views is not None:
+        analyst_views = views
         model = MeanRisk(
             risk_measure=RiskMeasure.VARIANCE,
-            objective_function=ObjectiveFunction.MAXIMIZE_RATIO,
-            prior_estimator=BlackLitterman(views=None)
+            objective_function=ObjectiveFunction.MINIMIZE_RISK,
+            prior_estimator=BlackLitterman(
+                views= analyst_views,
+                risk_free_rate= 0.05),
+            portfolio_params = dict(name="Black & Litterman")
         )
     elif method == 'RP':
         model = RiskBudgeting(
-            risk_measure=RiskMeasure.VARIANCE
+            risk_measure = RiskMeasure.VARIANCE,
+            risk_free_rate = 0.05,
+            prior_estimator = EmpiricalPrior(
+                mu_estimator = EmpiricalMu(), 
+                covariance_estimator = DenoiseCovariance()
+            ),
+            portfolio_params=dict(name="Risk Parity - Variance"),
         )
     elif method == 'HRP':
         model = HierarchicalRiskParity(
-            risk_measure=RiskMeasure.VARIANCE
+            risk_measure=RiskMeasure.VARIANCE, portfolio_params=dict(name="HRP-Variance"),
+            distance_estimator=KendallDistance(absolute=True),
+            prior_estimator = EmpiricalPrior(
+                mu_estimator= EmpiricalMu(), 
+                covariance_estimator = DenoiseCovariance()
+                )
         )
     else:
         raise ValueError("Selected method does not exist!")
 
 
+
     strategy = cross_val_predict(model, portfolio_historical_returns, cv=WalkForward(test_size= test_size, train_size= train_size))
     benchmark_portfolio = cross_val_predict(benchmark_estimator, portfolio_historical_returns, cv=WalkForward(test_size= test_size, train_size= train_size))
-
+    
     return (strategy, benchmark_portfolio)
 
 def plot_cumulative_returns(portfolio_historical_returns, method, strategy, benchmark, benchmark_portfolio):
     
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=portfolio_historical_returns.index.strftime("%Y-%m-%d").tolist(),
@@ -105,65 +152,3 @@ def plot_cumulative_returns(portfolio_historical_returns, method, strategy, benc
     )
 
     return fig
-
-def compare_multiperiod_portfolios(p1, p2, initial_amount, names=["Portfolio 1", "Portfolio 2"]):
-    metrics = [
-        "Mean Return (Ann.)",
-        "Volatility (Ann.)",
-        "Sharpe Ratio",
-        "Sortino Ratio",
-        "Skewness",
-        "Kurtosis",
-        "Cumulative Return",
-        "Final Value"
-    ]
-
-    descriptions = [
-        "Annualized average return (%)",
-        "Annualized volatility (%)",
-        "Risk-adjusted return (Sharpe)",
-        "Downside risk-adjusted return (Sortino)",
-        "Asymmetry of return distribution",
-        "Fat tails in return distribution",
-        "Total return over full period (%)",
-        "Final portfolio value in currency"
-    ]
-
-    data = {
-        "Mean Return (Ann.)": [
-            p1.annualized_mean,
-            p2.annualized_mean
-        ],
-        "Volatility (Ann.)": [
-            p1.annualized_variance,
-            p2.annualized_variance
-        ],
-        "Sharpe Ratio": [
-            p1.sharpe_ratio,
-            p2.sharpe_ratio
-        ],
-        "Sortino Ratio": [
-            p1.sortino_ratio,
-            p2.sortino_ratio
-        ],
-        "Skewness": [
-            p1.skew,
-            p2.skew
-        ],
-        "Kurtosis": [
-            p1.kurtosis,
-            p2.kurtosis
-        ],
-        "Cumulative Return": [
-            p1.cumulative_returns[-1],
-            p2.cumulative_returns[-1]
-        ],
-        "Final Value": [
-            (p1.cumulative_returns[-1]) * initial_amount,
-            (p2.cumulative_returns[-1]) * initial_amount
-        ]
-    }
-
-    df = pd.DataFrame(data, index=names).T
-    df.insert(0, "Metrics", metrics)
-    return df.round(4)

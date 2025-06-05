@@ -1,7 +1,7 @@
 from shiny import ui
-from Experiments.shiny_application.modules.data_gathering import PERIODS
 from shinywidgets import output_widget  
 
+# ------------- CUSTOMIZATION PANEL ----------------------
 
 portfolio_data_source_panel = ui.card(
     ui.card_header(
@@ -19,7 +19,6 @@ portfolio_data_source_panel = ui.card(
     )
 )
 
-
 portolio_setup_panel = ui.card(
     ui.card_header(
         ui.tags.h5("⚙️ Portfolio Setup", class_="card-title"),
@@ -29,15 +28,13 @@ portolio_setup_panel = ui.card(
     ui.output_ui('dynamic_input_data_source'),
     )
 
-
 portfolio_setup_guide_panel = ui.card(
         ui.card_header(
-        ui.tags.h5("📊 Portfolio Customization Guide", class_="card-title"),
+        ui.tags.h5("💡 Portfolio Customization Guide", class_="card-title"),
         class_="bg-primary text-white"  # Adds a nice header background
         ),
         ui.output_ui('dynamic_input_portfolio_customization_guide')
         )
-
 
 portfolio_prices_panel = ui.card(
     ui.card_header(
@@ -62,40 +59,69 @@ customization_panel = ui.layout_columns(
     col_widths=(3,3,6)
 )
 
-sidebar_content = ui.card(
+# ---------- ANALYSIS PANEL ---------------------------
+
+analysis_guide_panel = ui.card(
     ui.card_header(
-        ui.tags.h5("📈 Customize Data for Portfolio Analysis", class_="card-title"),
-        class_="bg-primary text-white"  # Matching header style
-    ),
-    ui.input_select(
-        'benchmark_portfolio',
-        'Select your benchmark portfolio',
-        ['EqualWeighted', 'Random', 'InverseVolatility']
-    ),
-    ui.input_radio_buttons(
-        'plot_type',
-        'Which plot do you want to see?',
-        ['CumulativeReturns', 'Returns', 'ReturnsDistribution', 'RollingMeasure', 'Composition'],
-        selected= 'CumulativeReturns',
-        inline= False
-    )
-)
-
-
-analysis_content = None
-
-analysis_panel = ui.page_sidebar(
-    ui.sidebar(sidebar_content, bg="#f8f8f8", open="closed", width="300px"),  
-    ui.layout_columns(
-        ui.card(
-            ui.card_header(
-                ui.tags.h5("📈 Visualisations", class_="card-title"),
+                ui.tags.h5("💡 Visualisation Setup Guide", class_="card-title"),
                 class_="bg-primary text-white"  # Matching header style
             ),
-            output_widget("render_portfolio_plots")
-        )
-    ),
+    ui.output_ui("dynamic_input_portfolio_analysis_guide")
 )
+
+asset_analysis_summary = ui.card(
+    ui.card_header(
+                ui.tags.h5("🔎 Asset Performance Summary Panel", class_="card-title"),
+                class_="bg-primary text-white"  # Matching header style
+            ),
+    ui.output_data_frame("render_asset_summary")
+)
+
+analysis_setup_panel = ui.card(
+            ui.card_header(
+                ui.tags.h5("⚙️ Visualisation Setup Panel", class_="card-title"),
+                class_="bg-primary text-white"  # Matching header style
+            ),
+            ui.output_ui("dynamic_input_asset_selectize"),
+            ui.input_select(
+                'plot_type',
+                'Select which plot do you want to see',
+                {
+                    'PricesReturns': 'Prices/Returns of Assets Over Time',
+                    'RollingSharpe': 'Rolling Sharpe Ratio Over Time Windows'
+                }
+            ),
+            asset_analysis_summary
+        )
+
+analysis_visualisations_panel = ui.card(
+            ui.card_header(
+                ui.tags.h5("📈Asset Visualisations", class_="card-title"),
+                class_="bg-primary text-white"  # Matching header style
+            ),
+            ui.layout_columns(
+                ui.output_text("render_prices_mode_text"),
+                ui.input_slider(
+                    'window_slider',
+                    'Set a window for a rolling sharpe ratio',
+                    5,
+                    100,
+                    30
+                )
+            ),
+            output_widget("render_stock_returns_plot"),
+            output_widget("render_rolling_sharpe_plot")
+        )
+
+analysis_panel = ui.layout_columns(
+        analysis_guide_panel,
+        analysis_setup_panel,
+        analysis_visualisations_panel,
+        col_widths=(3, 3, 6)
+    )
+
+
+# -------- OPTIMIZATION PANEL ----------------------------
 
 backtesting_setup = ui.card(
     ui.card_header(
@@ -115,8 +141,10 @@ backtesting_setup = ui.card(
             'MeanVariance': 'Mean-Variance Optimization', 'BlackLitterman': 'Black-Litterman Optimization',
             'RP': 'Risk-Parity Optimization', 'HRP': 'Hierarchical Risk Parity Optimization'
         },
-        selected= 'MeanVariance'
+        selected= 'BlackLitterman'
     ),
+    ui.output_ui("dynamic_input_markdown_analyst_views"),
+    ui.output_ui("dynamic_input_analyst_views"),
     ui.input_select(
         'rebalancing_time_period',
         'Choose your rebalancing period (on the first day)',
@@ -129,7 +157,8 @@ backtesting_setup = ui.card(
     ui.input_select(
         'train_time_period',
         'Choose your train time period',
-        {
+        {   '3Years': 'Three Years',
+            '2Years': 'Two Years',
             'Year': 'One Year',
             '11months': '11 Months',
             '10months': '10 Months',
@@ -146,7 +175,7 @@ backtesting_setup = ui.card(
             '2weeks': '2 Weeks',
             '1week': '1 Week'
         },
-        selected=  '4months'
+        selected=  'Year'
     ),
     ui.input_numeric(
         'initial_amount',
@@ -159,6 +188,7 @@ backtesting_setup = ui.card(
 data_summary = ui.card(
     ui.output_data_frame("render_benchmark_statistics")
 )
+
 backtesting_plots = ui.card(
     output_widget("render_benchmark_cumulative_returns_plot")
 )

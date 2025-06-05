@@ -36,6 +36,8 @@ def gather_data(tickers: List[str],
     if isinstance(data, pd.Series):
         data = data.to_frame(name=tickers[0])
 
+    data = data.dropna()
+
     data = data["Close"].reset_index().rename(columns={"Date": "date"})
     data["date"] = pd.to_datetime(data["date"])
     return data.set_index("date").sort_index(ascending=False)

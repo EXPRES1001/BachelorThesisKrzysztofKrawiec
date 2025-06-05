@@ -175,7 +175,7 @@ def register_callbacks1(input, output, session):
     @render.ui
     def dynamic_input_date_or_period():
         if input.date_or_period() == "period":
-            return ui.input_select("period_selection", "Period", PERIODS, selected= '3mo')
+            return ui.input_select("period_selection", "Period", PERIODS, selected= '5y')
         return ui.input_date_range("date_range", "Date range",
                                    start="2020-01-01")
 
