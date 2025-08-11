@@ -1,4 +1,3 @@
-# Bachelor Thesis Krzysztof Krawiec
-This is a repo for all files, codes, regarding bachelor thesis experiments. Feel free to share comments, including new files
-and codes. 
-Here, experiments regarding portfolio optimization wil be made.
+# Investment Portfolio Analysis Utilizing Automation in Exploratory Data Analysis and Machine Learning
+## Bachelor Thesis Krzysztof Krawiec
+Here you can find a branch in which app and helper files are placed. In order an app to work, you ought to open folder shiny_application and run app.py
